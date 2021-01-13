@@ -1,12 +1,12 @@
 import json
 import threading
-import flask
+from flask_api import FlaskAPI
 from flask import jsonify, request
 from flask_cors import CORS
 from game import Game
 
 
-app = flask.Flask(__name__)
+app = FlaskAPI(__name__)
 CORS(app)
 
 

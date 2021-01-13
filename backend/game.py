@@ -192,15 +192,15 @@ class Game:
             self.board[castle_move[1][0]][castle_move[1][1]] = king_piece
 
             if castle_move[2] == "queen":
-                temp = self.board[king_piece.x+2][king_piece.y]
-                temp.move((king_piece.x-1, king_piece.y))
-                self.board[king_piece.x-1][king_piece.y] = temp
-                self.board[king_piece.x+2][king_piece.y] = 0
+                temp = self.board[king_piece.x][king_piece.y-2]
+                temp.move((king_piece.x, king_piece.y+3))
+                self.board[king_piece.x][king_piece.y+1] = temp
+                self.board[king_piece.x][king_piece.y-2] = 0
             if castle_move[2] == "king":
-                temp = self.board[king_piece.x-1][king_piece.y]
-                temp.move((king_piece.x+1, king_piece.y))
-                self.board[king_piece.x+1][king_piece.y] = temp
-                self.board[king_piece.x-1][king_piece.y] = 0
+                temp = self.board[king_piece.x][king_piece.y+1]
+                temp.move((king_piece.x, king_piece.y-2))
+                self.board[king_piece.x][king_piece.y-1] = temp
+                self.board[king_piece.x][king_piece.y+1] = 0
             self.change_turn()
         else:
             king_piece.unselect()

@@ -13,10 +13,10 @@ class Knight(Piece):
 
     def get_valid_moves(self, game):
         valid_moves = []
-        moves = [(self.x-1, self.y-2), (self.x+1, self.y-2),  # up and left/right
-                 (self.x-1, self.y+2), (self.x+1, self.y+2),  # down and left/right
-                 (self.x+2, self.y-1), (self.x+2, self.y+1),  # right and up/down
-                 (self.x-2, self.y-1), (self.x-2, self.y+1)]  # left and up/down
+        moves = [(self.x-2, self.y-1), (self.x-2, self.y+1),  # up and left/right
+                 (self.x+2, self.y-1), (self.x+2, self.y+1),  # down and left/right
+                 (self.x-1, self.y+2), (self.x+1, self.y+2),  # right and up/down
+                 (self.x-1, self.y-2), (self.x+1, self.y-2)]  # left and up/down
 
         for move in moves:
             if game.move_within_bounds(move):

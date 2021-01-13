@@ -13,10 +13,10 @@ class Pawn(Piece):
 
     def get_valid_moves(self, game):
         valid_moves = []
-        moves_w = [(self.x, self.y-1), (self.x, self.y-2),
-                   (self.x-1, self.y-1), (self.x + 1, self.y-1)]
-        moves_b = [(self.x, self.y+1), (self.x, self.y+2),
-                   (self.x-1, self.y+1), (self.x + 1, self.y+1)]
+        moves_w = [(self.x-1, self.y), (self.x-2, self.y),
+                   (self.x-1, self.y-1), (self.x-1, self.y+1)]
+        moves_b = [(self.x+1, self.y), (self.x+2, self.y),
+                   (self.x+1, self.y-1), (self.x + 1, self.y+1)]
 
         if self.player == "white":
             if game.move_within_bounds(moves_w[0]):
@@ -24,7 +24,7 @@ class Pawn(Piece):
                     valid_moves.append(moves_w[0])
             if game.move_within_bounds(moves_w[1]):
                 if not game.cell_is_piece((moves_w[1][0], moves_w[1][1])
-                                          ) and not game.cell_is_piece((self.x, self.y-1)) and self.y == 6:
+                                          ) and not game.cell_is_piece((self.x-1, self.y)) and self.x == 6:
                     valid_moves.append(moves_w[1])
             for i in range(2, len(moves_w)):
                 if game.move_within_bounds(moves_w[i]):
@@ -37,7 +37,7 @@ class Pawn(Piece):
                     valid_moves.append(moves_b[0])
             if game.move_within_bounds(moves_b[1]):
                 if not game.cell_is_piece((moves_b[1][0], moves_b[1][1])
-                                          ) and not game.cell_is_piece((self.x, self.y+1)) and self.y == 1:
+                                          ) and not game.cell_is_piece((self.x+1, self.y)) and self.x == 1:
                     valid_moves.append(moves_b[1])
             for i in range(2, len(moves_b)):
                 if game.move_within_bounds(moves_b[i]):

@@ -13,13 +13,13 @@ class Queen(Piece):
 
     def get_valid_moves(self, game):
         valid_moves = []
-        moves = [[(self.x, self.y-j) for j in range(1, 8)],  # | up
-                 [(self.x+j, self.y) for j in range(1, 8)],  # -- right
-                 [(self.x-j, self.y) for j in range(1, 8)],  # -- left
-                 [(self.x, self.y+j) for j in range(1, 8)],  # | down
+        moves = [[(self.x, self.y-j) for j in range(1, 8)],  # -- left
+                 [(self.x+j, self.y) for j in range(1, 8)],  # | down
+                 [(self.x-j, self.y) for j in range(1, 8)],  # | up
+                 [(self.x, self.y+j) for j in range(1, 8)],  # -- right
                  [(self.x-j, self.y-j) for j in range(1, 8)],  # \ up-left
-                 [(self.x+j, self.y-j) for j in range(1, 8)],  # / up-right
-                 [(self.x-j, self.y+j) for j in range(1, 8)],  # / down-left
+                 [(self.x+j, self.y-j) for j in range(1, 8)],  # / down-left
+                 [(self.x-j, self.y+j) for j in range(1, 8)],  # / up-right
                  [(self.x+j, self.y+j) for j in range(1, 8)]  # \ down-right
                  ]
         for directions in moves:

@@ -42,23 +42,23 @@ class King(Piece):
     def get_valid_moves(self, game):
         valid_moves = []
         valid_castlemoves = []
-        moves = [(self.x, self.y-1), (self.x+1, self.y-1), (self.x+1, self.y+1  # up, up+left/right
+        moves = [(self.x-1, self.y), (self.x-1, self.y-1), (self.x-1, self.y+1  # up, up+left/right
                                                             ),
-                 (self.x-1, self.y), (self.x+1, self.y  # left, right
+                 (self.x, self.y-1), (self.x, self.y+1  # left, right
                                       ),
-                 (self.x, self.y+1), (self.x-1, self.y-1), (self.x-1, self.y+1)]  # down, down+left/right
-        castle_moves = [[(self.x+1, self.y), (self.x+2, self.y), "queen"],  # queenside
-                        [(self.x-1, self.y), (self.x-2, self.y), "king"]  # kingside
+                 (self.x+1, self.y), (self.x+1, self.y-1), (self.x+1, self.y+1)]  # down, down+left/right
+        castle_moves = [[(self.x, self.y-1), (self.x, self.y-2), "queen"],  # queenside
+                        [(self.x, self.y+1), (self.x, self.y+2), "king"]  # kingside
                         ]
 
         if self.move_counter == 0 and not self.incheck:
-            if isinstance(game.board[self.x+4][self.y], Rook):
-                if game.board[self.x+4][self.y].player == self.player and game.board[self.x+4][self.y].move_counter == self.move_counter:
-                    if game.board[self.x+1][self.y] == 0 and game.board[self.x+2][self.y] == 0 and game.board[self.x+3][self.y] == 0:
+            if isinstance(game.board[self.x][self.y-4], Rook):
+                if game.board[self.x][self.y-4].player == self.player and game.board[self.x][self.y-4].move_counter == self.move_counter:
+                    if game.board[self.x][self.y-1] == 0 and game.board[self.x][self.y-2] == 0 and game.board[self.x][self.y-3] == 0:
                         valid_castlemoves.append(castle_moves[0])
-            if isinstance(game.board[self.x-3][self.y], Rook):
-                if game.board[self.x-3][self.y].player == self.player and game.board[self.x-3][self.y].move_counter == self.move_counter:
-                    if game.board[self.x-1][self.y] == 0 and game.board[self.x-2][self.y] == 0:
+            if isinstance(game.board[self.x][self.y+3], Rook):
+                if game.board[self.x][self.y+3].player == self.player and game.board[self.x][self.y+3].move_counter == self.move_counter:
+                    if game.board[self.x][self.y+1] == 0 and game.board[self.x][self.y+2] == 0:
                         valid_castlemoves.append(castle_moves[1])
 
         for move in moves:

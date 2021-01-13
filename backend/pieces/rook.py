@@ -13,10 +13,10 @@ class Rook(Piece):
 
     def get_valid_moves(self, game):
         valid_moves = []
-        moves = [[(self.x, self.y-j) for j in range(1, 8)],  # | up
-                 [(self.x+j, self.y) for j in range(1, 8)],  # -- right
-                 [(self.x-j, self.y) for j in range(1, 8)],  # -- left
-                 [(self.x, self.y+j) for j in range(1, 8)]  # | down
+        moves = [[(self.x, self.y-j) for j in range(1, 8)],  # -- left
+                 [(self.x+j, self.y) for j in range(1, 8)],  # | down
+                 [(self.x-j, self.y) for j in range(1, 8)],  # | up
+                 [(self.x, self.y+j) for j in range(1, 8)]  # -- right
                  ]
         for directions in moves:
             for move in directions:

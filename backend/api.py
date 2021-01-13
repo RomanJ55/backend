@@ -10,9 +10,9 @@ app = FlaskAPI(__name__)
 CORS(app)
 
 
-game = Game()
+chess_game = Game()
 
-thread = threading.Thread(target=game.update_timer)
+thread = threading.Thread(target=chess_game.update_timer)
 
 
 @app.route('/', methods=['GET'])
@@ -22,7 +22,7 @@ def home():
 
 @app.route('/api/chess', methods=['GET'])
 def api_all():
-    json_str = json.dumps(game, default=lambda x: x.__dict__, indent=2)
+    json_str = json.dumps(chess_game, default=lambda x: x.__dict__, indent=2)
     return jsonify(json_str)
 
 
@@ -34,9 +34,9 @@ def handle_post():
     if len(result) > 2:
         piece_color = result["player"]
     if piece_color:
-        if piece_color == game.turn:
-            game.unselect_all()
-            game.board[x][y].select()
+        if piece_color == chess_game.turn:
+            chess_game.unselect_all()
+            chess_game.board[x][y].select()
         else:
             initiate_piece_move(x, y)
     else:
@@ -50,36 +50,37 @@ def handle_startend():
     command = result["command"]
 
     if command == "start":
-        game.run_game()
+        chess_game.run_game()
         try:
             thread.start()
         except RuntimeError:
             pass
     if command == "end":
-        game.stop_game("black" if game.turn == "white" else "white")
+        chess_game.stop_game("black" if chess_game.turn ==
+                             "white" else "white")
     return f"Game {command}"
 
 
 def initiate_piece_move(x, y):
-    piece = game.get_selected_piece()
+    piece = chess_game.get_selected_piece()
     if piece is not None:
         if not piece.get_type() == 5:  # if it's not a king
-            valid_moves = piece.get_valid_moves(game)
+            valid_moves = piece.get_valid_moves(chess_game)
             if (x, y) in valid_moves:
-                game.handle_piece_move(
+                chess_game.handle_piece_move(
                     piece, (x, y))
         else:  # if it's a king, we have to check the normal and castle moves
             valid_kingmoves, valid_castle_moves = piece.get_valid_moves(
-                game)
+                chess_game)
             if (x, y) in valid_kingmoves:
-                game.handle_piece_move(
+                chess_game.handle_piece_move(
                     piece, (x, y))
             elif len(valid_castle_moves) > 0 and ((x, y) == valid_castle_moves[0][1] or (x, y) == valid_castle_moves[1][1]):
                 if (x, y) == valid_castle_moves[0][1]:
-                    game.handle_castle_move(
+                    chess_game.handle_castle_move(
                         piece, valid_castle_moves[0])
                 else:
-                    game.handle_castle_move(
+                    chess_game.handle_castle_move(
                         piece, valid_castle_moves[1])
         try:
             thread.start()

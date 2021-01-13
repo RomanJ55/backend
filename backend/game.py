@@ -152,7 +152,7 @@ class Game:
         board_copy.board[move[0]][move[1]] = copy.deepcopy(piece)
         board_copy.board[move[0]][move[1]].move(move)
         # queeening
-        if isinstance(board_copy.board[move[0]][move[1]], Pawn) and (move[1] == 0 or move[1] == 7):
+        if isinstance(board_copy.board[move[0]][move[1]], Pawn) and (move[0] == 0 or move[0] == 7):
             board_copy.board[move[0]][move[1]] = Queen(
                 move[0], move[1], piece.player)
 
@@ -171,7 +171,7 @@ class Game:
             self.board[piece.x][piece.y] = 0
             piece.move((destination[0], destination[1]))
             # queeening
-            if isinstance(piece, Pawn) and (destination[1] == 0 or destination[1] == 7):
+            if isinstance(piece, Pawn) and (destination[0] == 0 or destination[0] == 7):
                 piece = Queen(destination[0], destination[1], piece.player)
             self.board[destination[0]][destination[1]] = piece
 

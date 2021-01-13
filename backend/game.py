@@ -141,12 +141,6 @@ class Game:
         return None
 
     def try_move(self, piece, move):
-        for i in range(self.rows):
-            for j in range(self.columns):
-                if self.cell_is_piece((i, j)):
-                    self.board[i][j].image_garbo = None
-        # piece.image_garbo is a tk PhotoImage object. need to remove it before deepcopy
-
         board_copy = copy.deepcopy(self)
         board_copy.board[piece.x][piece.y] = 0
         board_copy.board[move[0]][move[1]] = copy.deepcopy(piece)
@@ -193,12 +187,12 @@ class Game:
 
             if castle_move[2] == "queen":
                 temp = self.board[king_piece.x][king_piece.y-2]
-                temp.move((king_piece.x, king_piece.y+3))
+                temp.move((king_piece.x, king_piece.y+1))
                 self.board[king_piece.x][king_piece.y+1] = temp
                 self.board[king_piece.x][king_piece.y-2] = 0
             if castle_move[2] == "king":
                 temp = self.board[king_piece.x][king_piece.y+1]
-                temp.move((king_piece.x, king_piece.y-2))
+                temp.move((king_piece.x, king_piece.y-1))
                 self.board[king_piece.x][king_piece.y-1] = temp
                 self.board[king_piece.x][king_piece.y+1] = 0
             self.change_turn()

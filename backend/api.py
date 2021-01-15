@@ -1,5 +1,4 @@
 import json
-import threading
 from flask_api import FlaskAPI
 from flask import jsonify, request
 from flask_cors import CORS
@@ -11,8 +10,6 @@ CORS(app)
 
 
 chess_game = Game()
-
-thread = threading.Thread(target=chess_game.update_timer)
 
 
 @app.route('/', methods=['GET'])
@@ -51,10 +48,6 @@ def handle_startend():
 
     if command == "start":
         chess_game.run_game()
-        try:
-            thread.start()
-        except RuntimeError:
-            pass
     if command == "end":
         chess_game.stop_game("black" if chess_game.turn ==
                              "white" else "white")
@@ -82,10 +75,6 @@ def initiate_piece_move(x, y):
                 else:
                     chess_game.handle_castle_move(
                         piece, valid_castle_moves[1])
-        try:
-            thread.start()
-        except RuntimeError:
-            pass
 
 
 if __name__ == '__main__':

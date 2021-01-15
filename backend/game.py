@@ -1,5 +1,4 @@
 import copy
-import threading
 from pieces.pawn import Pawn
 from pieces.king import King
 from pieces.knight import Knight
@@ -18,9 +17,7 @@ class Game:
         self.game_running = False
         self.is_winner = False
         self.winner = None
-        self.timer_save = timer
-        self.white_time = 0
-        self.black_time = 0
+        self.timer = timer
 
     def run_game(self):
         self.reset_game()
@@ -36,8 +33,6 @@ class Game:
         return True if self.game_running else False
 
     def reset_game(self):
-        self.white_time = self.timer_save
-        self.black_time = self.timer_save
         self.is_winner = False
         self.winner = None
         self.turn = "white"
@@ -63,16 +58,6 @@ class Game:
                 king.mate(self)
             else:
                 self.stop_game("Draw...")
-
-    def update_timer(self):
-        if self.turn == "white":
-            self.white_time -= 1
-        else:
-            self.black_time -= 1
-        try:
-            threading.Timer(1.0, self.update_timer).start()
-        except RuntimeError:
-            pass
 
     def is_checkmate(self):
         for row in self.board:

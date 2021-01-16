@@ -1,60 +1,103 @@
 import json
-from flask_api import FlaskAPI
-from flask import jsonify, request
+from flask import Flask, render_template
 from flask_cors import CORS
+from flask_socketio import SocketIO, join_room, leave_room, emit, send, rooms
 from game import Game
 
 
-app = FlaskAPI(__name__)
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
+
+games = {0: Game()}
 
 
-chess_game = Game()
+@socketio.on('join', "/game")
+def on_join(data):
+    username = data['username']
+    room = data['room']
+    join_room(room)
+    games[room] = Game()
+    send(username + ' has entered the room.', room=room)
+
+
+@socketio.on('leave')
+def on_leave(data):
+    username = data['username']
+    room = data['room']
+    leave_room(room)
+    send(username + ' has left the room.', room=room)
+
+
+@socketio.on("data", "/game")
+def on_data():
+    game = None
+    room = rooms()
+    if len(room) > 1:
+        game = games[room[1]]
+    else:
+        game = games[0]
+
+    json_str = json.dumps(
+        game, default=lambda x: x.__dict__, indent=2)
+    emit("data", json_str)
+
+
+@socketio.on("gameStart", "/game")
+def on_start():
+    game = None
+    room = rooms()
+    if len(room) > 1:
+        game = games[room[1]]
+    else:
+        game = games[0]
+    game.run_game()
+    emit("gameStart", "game started!")
+
+
+@socketio.on("gameEnd", "/game")
+def on_end():
+    game = None
+    room = rooms()
+    if len(room) > 1:
+        game = games[room[1]]
+    else:
+        game = games[0]
+    game.stop_game("black" if game.turn == "white" else "white")
+    emit("gameEnd", "game ended!")
+
+
+@socketio.on("clicked", "/game")
+def on_clicked(data):
+    game = None
+    room = rooms()
+    if len(room) > 1:
+        game = games[room[1]]
+    else:
+        game = games[0]
+    piece_color = 0
+    x, y = data["x"], data["y"]
+    if len(data) > 2:
+        piece_color = data["player"]
+    if piece_color:
+        if piece_color == game.turn:
+            game.unselect_all()
+            game.board[x][y].select()
+        else:
+            initiate_piece_move(x, y, game)
+    else:
+        initiate_piece_move(x, y, game)
+    emit("clicked", "Done!")
 
 
 @app.route('/', methods=['GET'])
 def home():
-    return "Chess Api"
+    return render_template("index.html", async_mode=socketio.async_mode)
 
 
-@app.route('/api/chess', methods=['GET'])
-def api_all():
-    json_str = json.dumps(chess_game, default=lambda x: x.__dict__, indent=2)
-    return jsonify(json_str)
-
-
-@app.route('/api/chess/post', methods=['POST'])
-def handle_post():
-    result = request.get_json()
-    piece_color = 0
-    x, y = result["x"], result["y"]
-    if len(result) > 2:
-        piece_color = result["player"]
-    if piece_color:
-        if piece_color == chess_game.turn:
-            chess_game.unselect_all()
-            chess_game.board[x][y].select()
-        else:
-            initiate_piece_move(x, y)
-    else:
-        initiate_piece_move(x, y)
-    return "Done!"
-
-
-@app.route("/api/chess/startend", methods=['POST'])
-def handle_startend():
-    result = request.get_json()
-    command = result["command"]
-
-    if command == "start":
-        chess_game.run_game()
-    if command == "end":
-        chess_game.stop_game("black" if chess_game.turn ==
-                             "white" else "white")
-    return f"Game {command}"
-
-
-def initiate_piece_move(x, y):
+def initiate_piece_move(x, y, chess_game):
     piece = chess_game.get_selected_piece()
     if piece is not None:
         if not piece.get_type() == 5:  # if it's not a king
@@ -78,4 +121,4 @@ def initiate_piece_move(x, y):
 
 
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app)

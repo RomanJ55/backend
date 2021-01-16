@@ -1,1 +1,1 @@
-web: -k eventlet -w 1 --chdir backend api:app
+web: -c eventlet -w 1 --chdir backend api:app

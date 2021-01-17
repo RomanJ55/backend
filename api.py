@@ -1,6 +1,5 @@
 import json
 from flask import Flask, render_template
-from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, leave_room, emit, send, rooms
 from game import Game
 
@@ -8,27 +7,25 @@ from game import Game
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
+socketio = SocketIO(app, cors_allowed_origins="*",
+                    manage_session=False, max_http_buffer_size=1e8)
 
 games = {0: Game()}
 
 
 @socketio.on('join', "/game")
 def on_join(data):
-    username = data['username']
     room = data['room']
     join_room(room)
     games[room] = Game()
-    send(username + ' has entered the room.', room=room)
+    #send(username + ' has entered the room.', room=room)
 
 
 @socketio.on('leave')
 def on_leave(data):
-    username = data['username']
     room = data['room']
     leave_room(room)
-    send(username + ' has left the room.', room=room)
+    #send(username + ' has left the room.', room=room)
 
 
 @socketio.on("data", "/game")

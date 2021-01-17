@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
 socketio = SocketIO(app, cors_allowed_origins="*",
-                    manage_session=False, max_http_buffer_size=1e8, async_mode='eventlet')
+                    manage_session=False, max_http_buffer_size=1e8)
 
 games = {0: Game()}
 

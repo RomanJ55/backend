@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
 socketio = SocketIO(app, cors_allowed_origins="*",
-                    manage_session=False, max_http_buffer_size=1e8)
+                    manage_session=False, max_http_buffer_size=1e8, async_mode='eventlet')
 
 games = {0: Game()}
 
@@ -38,7 +38,7 @@ def on_data():
         game = games[room[1]]
     else:
         game = games[0]
-
+    socketio.sleep(0)
     json_str = json.dumps(
         game, default=lambda x: x.__dict__, indent=2)
     emit("data", json_str)
@@ -85,8 +85,10 @@ def on_clicked(data):
             game.unselect_all()
             game.board[x][y].select()
         else:
+            socketio.sleep(0)
             initiate_piece_move(x, y, game)
     else:
+        socketio.sleep(0)
         initiate_piece_move(x, y, game)
     emit("clicked", "Done!")
 

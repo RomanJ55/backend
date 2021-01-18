@@ -2,8 +2,8 @@ import json
 from flask import Flask, render_template
 from flask_socketio import SocketIO, join_room, leave_room, emit, send, rooms
 from game import Game
-import eventlet
-eventlet.monkey_patch()
+# import eventlet
+# eventlet.monkey_patch()
 
 
 app = Flask(__name__)
@@ -36,15 +36,20 @@ def on_join(data):
 @socketio.on('joinExisting', "/game")
 def on_joinExisting(data):
     username = data['username']
-    room = int(data['room'])
-    if room in games.keys():
-        games[room][1] = username
-        games[room][3] = Game()
-        games[room][2] = True
-        join_room(room)
-    else:
-        emit("joinExisting", "Wrong code")
-    send(username + ' has entered the room.', room=room)
+    if data['room'] is not None:
+        room = int(data['room'])
+        if room in games.keys():
+            if games[room][1] == "":
+                games[room][1] = username
+                games[room][3] = Game()
+                games[room][2] = True
+                join_room(room)
+                emit("joinExisting", f"{username} joined")
+            else:
+                emit("joinExisting", "Room is full")
+        else:
+            emit("joinExisting", "Wrong code! Room doesn't exist")
+        # send(username + ' has entered the room.', room=room)
 
 
 @socketio.on('leave', "/game")

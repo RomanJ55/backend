@@ -14,13 +14,11 @@ socketio = SocketIO(app, cors_allowed_origins="*",
 
 
 def make_dummy_game():
-    dummy_game = Game(1800)
-    dummy_game.reset_game()
-    dummy_game.game_running = True
-    dummy_game.timer = "not started"
-    dummy_game.turn = "not started"
-
-    return dummy_game
+    dgame = Game()
+    dgame.reset_game()
+    dgame.game_running = True
+    dgame.turn = "not started"
+    return dgame
 
 
 games = {0: ["", "", False,  make_dummy_game()]}
@@ -112,6 +110,19 @@ def on_gameEnd():
     game_entry[3].stop_game(
         "black" if game_entry[3].turn == "white" else "white")
     emit("gameEnd", "game ended!")
+
+
+@socketio.on("restart", "/game")
+def on_restart():
+    room = rooms()
+    room_id = 0
+    for r in room:
+        if isinstance(r, int):
+            room_id = r
+    game_entry = games[room_id]
+    game = game_entry[3]
+    game.run_game()
+    emit("restart", "game restarted")
 
 
 @socketio.on("clicked", "/game")

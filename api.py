@@ -22,40 +22,51 @@ def make_dummy_game():
 
 
 games = {0: ["", "", False,  make_dummy_game()]}
+users = []
 
 
 @socketio.on('join', "/game")
 def on_join(data):
     username = data['username']
-    room = data['room']
-    join_room(room)
-    games[room] = [username, "", False, make_dummy_game()]
-    send(username + ' has entered the room.', room=room)
+    if username not in users:
+        users.append(username)
+        room = data['room']
+        join_room(room)
+        games[room] = [username, "", False, make_dummy_game()]
+        emit("join", "joined")
+    else:
+        emit("join", "Username already exists")
+    # send(username + ' has entered the room.', room=room)
 
 
 @socketio.on('joinExisting', "/game")
 def on_joinExisting(data):
     username = data['username']
-    if data['room'] is not None:
-        room = int(data['room'])
-        if room in games.keys():
-            if games[room][1] == "":
-                games[room][1] = username
-                games[room][3] = Game()
-                games[room][2] = True
-                join_room(room)
-                emit("joinExisting", f"{username} joined")
+    if username not in users:
+        if data['room'] is not None:
+            room = int(data['room'])
+            if room in games.keys():
+                if games[room][1] == "":
+                    users.append(username)
+                    games[room][1] = username
+                    games[room][3] = Game()
+                    games[room][2] = True
+                    join_room(room)
+                    emit("joinExisting", f"{username} joined")
+                else:
+                    emit("joinExisting", "Room is full")
             else:
-                emit("joinExisting", "Room is full")
-        else:
-            emit("joinExisting", "Wrong code! Room doesn't exist")
-        # send(username + ' has entered the room.', room=room)
+                emit("joinExisting", "Wrong code! Room doesn't exist")
+    else:
+        emit('joinExisting', "Username already exists")
+    # send(username + ' has entered the room.', room=room)
 
 
 @socketio.on('leave', "/game")
 def on_leave(data):
     room = data["room"]
     username = data["username"]
+    users.remove(username)
 
     game = games[room]
     if game[0] == username:
@@ -153,6 +164,13 @@ def on_clicked(data):
     else:
         initiate_piece_move(x, y, game)
     emit("clicked", "Done!")
+
+
+@socketio.on("serverData", "/game")
+def on_serverData():
+    # len(users)
+    # len(games)
+    pass
 
 
 @app.route('/', methods=['GET'])

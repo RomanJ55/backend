@@ -79,7 +79,7 @@ def on_leave(data):
     if (game[0] == "" and game[1] == ""):
         games.pop(room)
     leave_room(room)
-    send(username + ' has left the room.', room=room)
+    # send(username + ' has left the room.', room=room)
 
 
 @socketio.on("data", "/game")
@@ -151,26 +151,34 @@ def on_clicked(data):
     game_entry = games[room_id]
     game = game_entry[3]
 
-    piece_color = 0
-    x, y = data["x"], data["y"]
-    if len(data) > 2:
-        piece_color = data["player"]
-    if piece_color:
-        if piece_color == game.turn:
-            game.unselect_all()
-            game.board[x][y].select()
+    if ((data['name'] == game_entry[0]) and game.turn == "white") or ((data['name'] == game_entry[1]) and game.turn == "black"):
+        piece_color = 0
+        x, y = data["x"], data["y"]
+        if len(data) > 3:
+            piece_color = data["player"]
+        if piece_color:
+            if piece_color == game.turn:
+                game.unselect_all()
+                game.board[x][y].select()
+            else:
+                initiate_piece_move(x, y, game)
         else:
             initiate_piece_move(x, y, game)
+        emit("clicked", "Done!")
     else:
-        initiate_piece_move(x, y, game)
-    emit("clicked", "Done!")
+        emit("clicked", "Wrong turn")
 
 
-@socketio.on("serverData", "/game")
-def on_serverData():
-    # len(users)
-    # len(games)
-    pass
+@socketio.on("roomData", "/game")
+def on_roomData():
+    room = rooms()
+    room_id = 0
+    for r in room:
+        if isinstance(r, int):
+            room_id = r
+    game_entry = games[room_id]
+    emit("roomData", [game_entry[0], game_entry[1],
+                      game_entry[2]], room=room_id)
 
 
 @app.route('/', methods=['GET'])

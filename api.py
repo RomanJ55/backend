@@ -1,6 +1,6 @@
 import json
 from flask import Flask, render_template
-from flask_socketio import SocketIO, join_room, leave_room, emit, send, rooms
+from flask_socketio import SocketIO, join_room, leave_room, emit, rooms
 from game import Game
 import eventlet
 eventlet.monkey_patch()
@@ -13,177 +13,164 @@ socketio = SocketIO(app, cors_allowed_origins="*",
                     manage_session=False, max_http_buffer_size=1e8)
 
 
-def make_dummy_game():
-    dgame = Game()
+def make_dummy_game(timer=900):
+    dgame = Game(timer)
     dgame.reset_game()
     dgame.game_running = True
     dgame.turn = "not started"
     return dgame
 
 
-games = {0: ["", "", False,  make_dummy_game()]}
-users = []
+games = {0: ["", "", False,  make_dummy_game(), 1800]}
 
 
-@socketio.on('join', "/game")
-def on_join(data):
+@socketio.on('createGame', "/game")
+def on_createGame(data):
     username = data['username']
-    if username not in users:
-        users.append(username)
-        room = data['room']
-        join_room(room)
-        games[room] = [username, "", False, make_dummy_game()]
-        emit("join", "joined")
-    else:
-        emit("join", "Username already exists")
-    # send(username + ' has entered the room.', room=room)
+    room = data['room']
+    timer = int(data['timer'])*60
+
+    join_room(room)
+    games[room] = [username, "", False, Game(timer), timer]
+    emit("createGame", "success")
 
 
 @socketio.on('joinExisting', "/game")
 def on_joinExisting(data):
     username = data['username']
-    if username not in users:
-        if data['room'] is not None:
-            room = int(data['room'])
-            if room in games.keys():
-                if games[room][1] == "":
-                    users.append(username)
-                    games[room][1] = username
-                    games[room][3] = Game()
-                    games[room][2] = True
-                    join_room(room)
-                    emit("joinExisting", f"{username} joined")
-                else:
-                    emit("joinExisting", "Room is full")
+    if data['room'] is not None:
+        room = int(data['room'])
+        if room in games.keys():
+            if games[room][1] == "":
+                games[room][1] = username
+                join_room(room)
+                emit("joinExisting", "joined")
+            elif games[room][0] == "":
+                games[room][0] = username
+                join_room(room)
+                emit("joinExisting", "joined")
             else:
-                emit("joinExisting", "Wrong code! Room doesn't exist")
-    else:
-        emit('joinExisting', "Username already exists")
-    # send(username + ' has entered the room.', room=room)
+                emit("joinExisting", "Room is full")
+        else:
+            emit("joinExisting", "Room doesn't exist")
 
 
 @socketio.on('leave', "/game")
 def on_leave(data):
     room = data["room"]
     username = data["username"]
-    users.remove(username)
 
     game = games[room]
     if game[0] == username:
         game[0] = ""
     if game[1] == username:
         game[1] = ""
+    game[3].reset_game()
+    game[3].game_running = False
     game[2] = False
-    game[3] = make_dummy_game()
 
     if (game[0] == "" and game[1] == ""):
         games.pop(room)
     leave_room(room)
-    # send(username + ' has left the room.', room=room)
 
 
 @socketio.on("data", "/game")
-def on_data():
-    game = None
-    room_id = 0
-    room = rooms()
-    if len(room) > 1:
-        for r in room:
-            if isinstance(r, int):
-                room_id = r
-        game_entry = games[room_id]
-        if game_entry[2]:
-            game = game_entry[3]
-        else:
-            game = games[0][3]
-    else:
-        game = games[0][3]
-    json_str = json.dumps(
-        game, default=lambda x: x.__dict__, indent=2)
-    emit("data", json_str, room=room_id)
+def on_data(data):
+    if data['room'] in games:
+        game_entry = games[data['room']]
+        game = game_entry[3]
+
+        json_str = json.dumps(
+            game, default=lambda x: x.__dict__, indent=2)
+        emit("data", json_str, room=data['room'])
 
 
 @socketio.on("gameStart", "/game")
 def on_gameStart():
     room = rooms()
-    room_id = 0
-    for r in room:
-        if isinstance(r, int):
-            room_id = r
+    room_id = get_room_id(room)
     game_entry = games[room_id]
+    game_entry[2] = True
     game_entry[3].run_game()
-    emit("gameStart", "game started!")
 
 
 @socketio.on("gameEnd", "/game")
 def on_gameEnd():
     room = rooms()
-    room_id = 0
-    for r in room:
-        if isinstance(r, int):
-            room_id = r
+    room_id = get_room_id(room)
     game_entry = games[room_id]
+    game_entry[2] = False
     game_entry[3].stop_game(
         "black" if game_entry[3].turn == "white" else "white")
-    emit("gameEnd", "game ended!")
+
+
+@socketio.on("giveup", "/game")
+def on_giveup(data):
+    winner = None
+    game_entry = games[data['room']]
+    if data['username'] == game_entry[0]:
+        winner = "black"
+    else:
+        winner = "white"
+    game_entry[2] = False
+    game_entry[3].stop_game(winner)
 
 
 @socketio.on("restart", "/game")
 def on_restart():
     room = rooms()
-    room_id = 0
-    for r in room:
-        if isinstance(r, int):
-            room_id = r
+    room_id = get_room_id(room)
     game_entry = games[room_id]
-    game = game_entry[3]
-    game.run_game()
-    emit("restart", "game restarted")
+    game_entry[2] = True
+    game_entry[3].run_game()
 
 
 @socketio.on("clicked", "/game")
 def on_clicked(data):
     room = rooms()
-    room_id = 0
-    for r in room:
-        if isinstance(r, int):
-            room_id = r
+    room_id = get_room_id(room)
     game_entry = games[room_id]
     game = game_entry[3]
 
-    if ((data['name'] == game_entry[0]) and game.turn == "white") or ((data['name'] == game_entry[1]) and game.turn == "black"):
-        piece_color = 0
-        x, y = data["x"], data["y"]
-        if len(data) > 3:
-            piece_color = data["player"]
-        if piece_color:
-            if piece_color == game.turn:
-                game.unselect_all()
-                game.board[x][y].select()
+    if game.game_running:
+        if ((data['name'] == game_entry[0]) and game.turn == "white") or ((data['name'] == game_entry[1]) and game.turn == "black"):
+            piece_color = 0
+            x, y = data["x"], data["y"]
+            if len(data) > 3:
+                piece_color = data["player"]
+            if piece_color:
+                if piece_color == game.turn:
+                    game.unselect_all()
+                    game.board[x][y].select()
+                else:
+                    initiate_piece_move(x, y, game)
             else:
                 initiate_piece_move(x, y, game)
+            emit("clicked", "success")
         else:
-            initiate_piece_move(x, y, game)
-        emit("clicked", "Done!")
+            emit("clicked", "Wrong turn")
     else:
-        emit("clicked", "Wrong turn")
+        emit("clicked", "not running")
 
 
 @socketio.on("roomData", "/game")
-def on_roomData():
-    room = rooms()
-    room_id = 0
-    for r in room:
-        if isinstance(r, int):
-            room_id = r
-    game_entry = games[room_id]
-    emit("roomData", [game_entry[0], game_entry[1],
-                      game_entry[2]], room=room_id)
+def on_roomData(data):
+    if data['room'] in games:
+        game_entry = games[data['room']]
+        emit("roomData", [game_entry[0], game_entry[1],
+                          game_entry[2], game_entry[4]], room=data['room'])
 
 
 @app.route('/', methods=['GET'])
 def home():
     return render_template("index.html", async_mode=socketio.async_mode)
+
+
+def get_room_id(room):
+    for r in room:
+        if isinstance(r, int):
+            return r
+    return 0
 
 
 def initiate_piece_move(x, y, chess_game):
